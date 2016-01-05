@@ -41,8 +41,8 @@ def send_to_zabbix(metrics, zabbix_host='127.0.0.1', zabbix_port=10051, timeout 
     packet = b'ZBXD\1' + data_len + json_data.encode('ascii')
     try:
         zabbix = socket.socket()
-        zabbix.connect((zabbix_host, zabbix_port))
         zabbix.settimeout(timeout)
+        zabbix.connect((zabbix_host, zabbix_port))
         # send metrics to zabbix
         zabbix.sendall(packet)
         # get response header from zabbix
