@@ -40,7 +40,11 @@ def send_to_zabbix(metrics, zabbix_host='127.0.0.1', zabbix_port=10051, timeout 
     data_len = struct.pack('<Q', len(json_data))
     packet = b'ZBXD\1' + data_len + json_data.encode('ascii')
     try:
-        zabbix = socket.socket()
+        addrs = socket.getaddrinfo(zabbix_host, zabbix_port)
+        if len(addrs) > 0 and addrs[0][0] == socket.AF_INET6:
+            zabbix = socket.socket(socket.AF_INET6)
+        else:
+            zabbix = socket.socket(socket.AF_INET)
         zabbix.settimeout(timeout)
         zabbix.connect((zabbix_host, zabbix_port))
         # send metrics to zabbix
