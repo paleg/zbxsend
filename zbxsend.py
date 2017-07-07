@@ -20,8 +20,8 @@ class Metric(object):
         return 'Metric(%r, %r, %r, %r)' % (self.host, self.key, self.value, self.clock)
 
 def send_to_zabbix(metrics, zabbix_host='127.0.0.1', zabbix_port=10051, timeout = socket.getdefaulttimeout()):
-    """Send set of metrics to Zabbix server.""" 
-    
+    """Send set of metrics to Zabbix server."""
+
     j = json.dumps
     # Zabbix has very fragile JSON parser, and we cannot use json to dump whole packet
     metrics_data = []
@@ -36,7 +36,7 @@ def send_to_zabbix(metrics, zabbix_host='127.0.0.1', zabbix_port=10051, timeout 
            '\t"request":"sender data",\n'
            '\t"data":[\n%s]\n'
            '}') % (',\n'.join(metrics_data))
-    
+
     data_len = struct.pack('<Q', len(json_data))
     packet = b'ZBXD\1' + data_len + json_data.encode('ascii')
     try:
@@ -60,7 +60,15 @@ def send_to_zabbix(metrics, zabbix_host='127.0.0.1', zabbix_port=10051, timeout 
         if resp.get('response') != 'success':
             logger.error('Got error from Zabbix: %s', resp)
             return False
-        return True
+        else:
+            info = {}
+            for x in [ x.split(':') for x in resp.get('info').split(';') ]:
+                info[x[0].strip()] = x[1].strip()
+            if info['failed'] != "0":
+                logger.warning("Zabbix refused {} of {} items".format(int(info['failed']), len(metrics)))
+                return False
+            else:
+                return True
     except socket.timeout as e:
         logger.error("zabbix timeout: " + str(e))
         return False
@@ -70,9 +78,7 @@ def send_to_zabbix(metrics, zabbix_host='127.0.0.1', zabbix_port=10051, timeout 
     finally:
         zabbix.close()
 
-
-
-logger = logging.getLogger('zbxsender') 
+logger = logging.getLogger('zbxsender')
 
 def _recv_all(sock, count):
     buf = b''
@@ -83,7 +89,6 @@ def _recv_all(sock, count):
         buf += chunk
     return buf
 
-    
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     send_to_zabbix([Metric('localhost', 'bucks_earned', 99999)], 'localhost', 10051)
