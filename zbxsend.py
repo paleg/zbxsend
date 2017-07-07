@@ -27,7 +27,7 @@ def send_to_zabbix(metrics, zabbix_host='127.0.0.1', zabbix_port=10051, timeout 
     # Zabbix has very fragile JSON parser, and we cannot use json to dump whole packet
     metrics_data = []
     for m in metrics:
-        clock = m.clock or time.time()
+        clock = int(m.clock or time.time())
         metrics_data.append(('\t\t{\n'
                              '\t\t\t"host":%s,\n'
                              '\t\t\t"key":%s,\n'
